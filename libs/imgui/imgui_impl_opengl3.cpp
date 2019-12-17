@@ -69,19 +69,12 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
-#if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
-#include <stddef.h>     // intptr_t
-#else
 #include <stdint.h>     // intptr_t
-#endif
-#if defined(__APPLE__)
-#include "TargetConditionals.h"
-#endif
 
 #include <glad/glad.h>  // Needs to be initialized with gladLoadGL() in user's code
 
 // OpenGL Data
-static char         g_GlslVersionString[32] = "#version 330";
+static char         g_GlslVersionString[32] = "";   // Specified by user or detected based on compile time GL settings.
 static GLuint       g_FontTexture = 0;
 static GLuint       g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
 static int          g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;                                // Uniforms location
@@ -91,27 +84,15 @@ static unsigned int g_VboHandle = 0, g_ElementsHandle = 0;
 // Functions
 bool    ImGui_ImplOpenGL3_Init()
 {
+    const char* glsl_version = "#version 330";
+
     // Setup back-end capabilities flags
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = "imgui_impl_opengl3";
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
-    // Dummy construct to make it easily visible in the IDE and debugger which GL loader has been selected.
-    // The code actually never uses the 'gl_loader' variable! It is only here so you can read it!
-    // If auto-detection fails or doesn't select the same GL loader file as used by your application,
-    // you are likely to get a crash below.
-    // You can explicitly select a loader by using '#define IMGUI_IMPL_OPENGL_LOADER_XXX' in imconfig.h or compiler command-line.
-    const char* gl_loader = "Unknown";
-    IM_UNUSED(gl_loader);
-#if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-    gl_loader = "GL3W";
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
-    gl_loader = "GLEW";
-#elif defined(IMGUI_IMPL_OPENGL_LOADER_GLAD)
-    gl_loader = "GLAD";
-#else // IMGUI_IMPL_OPENGL_LOADER_CUSTOM
-    gl_loader = "Custom";
-#endif
+    strcpy(g_GlslVersionString, glsl_version);
+    strcat(g_GlslVersionString, "\n");
 
     // Make a dummy GL call (we don't actually need the result)
     // IF YOU GET A CRASH HERE: it probably means that you haven't initialized the OpenGL function loader used by this code.
@@ -398,10 +379,9 @@ bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
     GLint last_texture, last_array_buffer;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
-#ifndef IMGUI_IMPL_OPENGL_ES2
-    GLint last_vertex_array;
-    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
-#endif
+
+    // Parse GLSL version string
+    int glsl_version = 330;
 
     const GLchar* vertex_shader =
         "uniform mat4 ProjMtx;\n"
@@ -461,7 +441,6 @@ bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
     // Restore modified GL state
     glBindTexture(GL_TEXTURE_2D, last_texture);
     glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
-    glBindVertexArray(last_vertex_array);
 
     return true;
 }
