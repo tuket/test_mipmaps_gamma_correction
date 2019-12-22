@@ -21,6 +21,7 @@ endif()
 add_subdirectory(libs/glad)
 add_subdirectory(libs/glfw)
 add_subdirectory(libs/imgui)
+add_subdirectory(libs/stb)
 
 set(SOURCES
     main.cpp
@@ -31,6 +32,15 @@ add_executable(test_mipmaps
     ${SOURCES}
 )
 
+add_executable(compare_images
+    src/compare_images.cpp
+)
+
 target_link_libraries(test_mipmaps glad)
 target_link_libraries(test_mipmaps glfw)
 target_link_libraries(test_mipmaps imgui)
+target_link_libraries(test_mipmaps stb)
+target_link_libraries(compare_images glad)
+target_link_libraries(compare_images glfw)
+target_link_libraries(compare_images imgui)
+target_link_libraries(compare_images stb)
